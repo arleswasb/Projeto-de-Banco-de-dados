@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.sqlite3 # Se você usasse SQLite, mas é bom ter
+.env       # CRUCIAL: Contém suas credenciais do banco de dados!
+venv/      # Sua pasta de ambiente virtual
+.venv/     # Outro nome comum para pasta de ambiente virtual
+
+# Logs
+*.log
+*.tmp
+
+# IDEs
+.vscode/   # Configurações pessoais do VS Code (opcional, pode ser versionado se for settings do projeto)
+.idea/     # Pastas do PyCharm/IntelliJ
+
+# Dependências do sistema (se aplicável)
+.DS_Store # macOS
+Thumbs.db # Windows
