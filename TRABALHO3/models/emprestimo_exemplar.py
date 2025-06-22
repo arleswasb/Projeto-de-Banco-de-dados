@@ -1,4 +1,7 @@
 # trabalho3/models/emprestimo_exemplar.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from sqlalchemy import BigInteger, Column, ForeignKeyConstraint, PrimaryKeyConstraint, Table
 from ..db import Base # <--- MUITO IMPORTANTE: Mude para a sua Base
 

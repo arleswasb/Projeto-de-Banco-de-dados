@@ -1,4 +1,7 @@
 # TRABALHO3/services/aluno_service.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from sqlalchemy.orm import Session
 from ..models.aluno import Aluno
 from typing import Optional, List # OK! Optional e List importados

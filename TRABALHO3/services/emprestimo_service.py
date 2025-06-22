@@ -1,4 +1,7 @@
 # TRABALHO3/services/emprestimo_service.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from sqlalchemy.orm import Session, joinedload # Adicione 'joinedload' aqui
 from datetime import date, datetime # Adicione 'datetime' aqui
 

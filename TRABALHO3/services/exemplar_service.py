@@ -1,4 +1,7 @@
 # trabalho3/services/exemplar_service.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from sqlalchemy.orm import Session
 from ..models.exemplar import Exemplar
 from ..models.livro import Livro # Importe se precisar acessar dados do livro

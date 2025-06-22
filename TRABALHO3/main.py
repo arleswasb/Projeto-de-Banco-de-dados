@@ -93,7 +93,7 @@ def run_example_operations():
             db.rollback()
             print("Livro com este cod_livro já existe. Buscando um existente.")
             # Se o livro já existe com esse ID, tentamos buscar ele.
-            novo_livro = livro_service.get_livro_by_id(test_livro_id)
+            novo_livro = livro_service.get_livro_by_cod_livro(test_livro_id)
             if not novo_livro:
                 print("Não foi possível criar nem encontrar o livro. Exemplo abortado.")
                 return

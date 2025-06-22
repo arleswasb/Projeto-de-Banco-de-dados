@@ -1,5 +1,7 @@
 # trabalho3/db.py
+"""Módulo para configuração de conexão com o banco de dados."""
 import os
+import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv

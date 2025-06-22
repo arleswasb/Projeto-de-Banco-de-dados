@@ -1,4 +1,7 @@
 # trabalho3/models/aluno.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from typing import List, Optional
 from sqlalchemy import BigInteger, String, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship

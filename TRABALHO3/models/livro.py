@@ -1,4 +1,7 @@
 # TRABALHO3/models/livro.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 
 from typing import List, Optional
 from sqlalchemy import BigInteger, String, PrimaryKeyConstraint

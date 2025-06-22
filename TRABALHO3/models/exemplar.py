@@ -1,4 +1,7 @@
 # trabalho3/models/exemplar.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from typing import List, Optional
 from sqlalchemy import BigInteger, ForeignKeyConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship

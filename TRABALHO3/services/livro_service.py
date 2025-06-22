@@ -1,4 +1,7 @@
 # TRABALHO3/services/livro_service.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 from sqlalchemy.orm import Session
 from ..models.livro import Livro
 from typing import Optional, List # Adicione esta linha

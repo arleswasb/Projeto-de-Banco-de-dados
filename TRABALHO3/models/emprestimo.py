@@ -1,4 +1,7 @@
 # TRABALHO3/models/emprestimo.py
+"""Módulo para configuração de conexão com o banco de dados."""
+import os
+import sys
 
 # Certifique-se de que todas as importações do SQLAlchemy estão aqui:
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, BigInteger, Date, PrimaryKeyConstraint, ForeignKeyConstraint # <-- ADICIONE ForeignKeyConstraint AQUI
