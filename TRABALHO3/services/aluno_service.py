@@ -1,61 +1,75 @@
 # TRABALHO3/services/aluno_service.py
-"""Módulo para configuração de conexão com o banco de dados."""
-import os
-import sys
+"""Módulo de serviço para operações CRUD na entidade Aluno."""
+
 from sqlalchemy.orm import Session
 from ..models.aluno import Aluno
-from typing import Optional, List # OK! Optional e List importados
+from typing import Optional, List
 
 class AlunoService:
-    def __init__(self, db: Session):
-        self.db = db
+    """
+    Classe de serviço para gerenciar as operações CRUD da entidade Aluno.
+    """
 
-    def create_aluno(self, nome: str, matricula: str, email: str, curso: str = None) -> Aluno: # Adicione 'curso' aos parâmetros, pois o modelo tem
-        """Cria um novo aluno."""
-        # Passe 'curso' aqui também, se ele for NOT NULL no DB ou para preenchê-lo
-        db_aluno = Aluno(nome=nome, matricula=matricula, email=email, curso=curso)
-        self.db.add(db_aluno)
-        self.db.commit()
-        self.db.refresh(db_aluno)
-        return db_aluno
-
-    def get_aluno_by_matricula(self, matricula: str) -> Optional[Aluno]:
-        """Busca um aluno pelo número de matrícula (PK)."""
-        return self.db.query(Aluno).filter(Aluno.matricula == matricula).first()
-
-    def get_aluno_by_email(self, email: str) -> Optional[Aluno]:
-        """Busca um aluno pelo email."""
-        return self.db.query(Aluno).filter(Aluno.email == email).first()
-
-    def get_aluno_by_nome(self, nome: str) -> Optional[Aluno]:
-        """Busca um aluno pelo nome."""
-        return self.db.query(Aluno).filter(Aluno.nome == nome).first()
-
-    def update_aluno(self, matricula_existente: str, new_nome: str = None, new_email: str = None, new_curso: str = None) -> Optional[Aluno]:
-        """Atualiza as informações de um aluno existente pela matrícula."""
-        db_aluno = self.get_aluno_by_matricula(matricula_existente) # Busca pela matrícula (CORRETO)
-        if db_aluno:
-            if new_nome is not None:
-                db_aluno.nome = new_nome
-            if new_email is not None:
-                db_aluno.email = new_email
-            if new_curso is not None: # Se 'curso' for um campo atualizável
-                db_aluno.curso = new_curso
-            # Não atualize a matrícula (PK) a menos que seja estritamente necessário e o DB permita.
-            self.db.commit()
-            self.db.refresh(db_aluno)
+    def criar_aluno(self, db: Session, nome: str, matricula: str, email: str, curso: str) -> Optional[Aluno]:
+        """Cria um novo aluno no banco de dados."""
+        try:
+            db_aluno = Aluno(nome=nome, matricula=matricula, email=email, curso=curso)
+            db.add(db_aluno)
+            db.commit()
+            db.refresh(db_aluno)
             return db_aluno
-        return None
+        except Exception as e:
+            print(f"Erro ao criar aluno: {e}")
+            db.rollback()
+            return None
 
-    def delete_aluno(self, matricula: str) -> bool: # Mude o parâmetro de 'aluno_id: int' para 'matricula: str'
-        """Deleta um aluno pelo número de matrícula (PK)."""
-        db_aluno = self.get_aluno_by_matricula(matricula) # Busca pela matrícula (CORRETO)
-        if db_aluno:
-            self.db.delete(db_aluno)
-            self.db.commit()
+    def listar_alunos(self, db: Session, skip: int = 0, limit: int = 100) -> List[Aluno]:
+        """Lista todos os alunos com paginação."""
+        return db.query(Aluno).offset(skip).limit(limit).all()
+
+    def buscar_aluno_por_id(self, db: Session, matricula: str) -> Optional[Aluno]:
+        """Busca um aluno pela sua matrícula (chave primária)."""
+        return db.query(Aluno).filter(Aluno.matricula == matricula).first()
+
+    def atualizar_aluno(self, db: Session, matricula: str, nome: Optional[str] = None, email: Optional[str] = None, curso: Optional[str] = None) -> Optional[Aluno]:
+        """Atualiza os dados de um aluno existente."""
+        db_aluno = self.buscar_aluno_por_id(db, matricula)
+        if not db_aluno:
+            return None
+        
+        try:
+            if nome is not None:
+                db_aluno.nome = nome
+            if email is not None:
+                db_aluno.email = email
+            if curso is not None:
+                db_aluno.curso = curso
+            
+            db.commit()
+            db.refresh(db_aluno)
+            return db_aluno
+        except Exception as e:
+            print(f"Erro ao atualizar aluno: {e}")
+            db.rollback()
+            return None
+
+    def remover_aluno(self, db: Session, matricula: str) -> bool:
+        """Remove um aluno do banco de dados."""
+        db_aluno = self.buscar_aluno_por_id(db, matricula)
+        if not db_aluno:
+            return False
+            
+        try:
+            db.delete(db_aluno)
+            db.commit()
             return True
-        return False
+        except Exception as e:
+            print(f"Erro ao remover aluno: {e}")
+            db.rollback()
+            return False
 
-    def get_all_alunos(self, skip: int = 0, limit: int = 100) -> List[Aluno]:
-        """Lista todos os alunos."""
-        return self.db.query(Aluno).offset(skip).limit(limit).all()
+    # --- Métodos de busca adicionais (não obrigatórios, mas úteis) ---
+
+    def buscar_aluno_por_email(self, db: Session, email: str) -> Optional[Aluno]:
+        """Busca um aluno pelo email."""
+        return db.query(Aluno).filter(Aluno.email == email).first()

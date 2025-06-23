@@ -1,12 +1,11 @@
 # TRABALHO3/models/livro.py
-"""Módulo para configuração de conexão com o banco de dados."""
-import os
-import sys
+"""Modelo ORM para a tabela Livro."""
 
 from typing import List, Optional
 from sqlalchemy import BigInteger, String, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from ..db import Base # <--- MUITO IMPORTANTE: Mude para a sua Base
+
+from ..db import Base
 
 class Livro(Base):
     __tablename__ = 'livro'
@@ -14,14 +13,17 @@ class Livro(Base):
         PrimaryKeyConstraint('cod_livro', name='livro_pkey'),
     )
 
-    # ADICIONE autoincrement=True AQUI
-    cod_livro: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True) # <-- CORREÇÃO
+    cod_livro: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     titulo: Mapped[Optional[str]] = mapped_column(String(255))
     autor: Mapped[Optional[str]] = mapped_column(String(255))
-    editora: Mapped[Optional[str]] = mapped_column(String(255)) # Verifique se esta linha está correta para seu DB
+    editora: Mapped[Optional[str]] = mapped_column(String(255))
     ano: Mapped[Optional[int]] = mapped_column(BigInteger)
 
-    exemplar: Mapped[List['Exemplar']] = relationship('Exemplar', back_populates='livro')
+    # --- RELACIONAMENTO COM NOMENCLATURA MELHORADA ---
+
+    # Relacionamento Um-para-Muitos com Exemplar.
+    # Um livro pode ter vários exemplares. O nome 'exemplares' reflete a lista.
+    exemplares: Mapped[List['Exemplar']] = relationship('Exemplar', back_populates='livro')
 
     def __repr__(self):
         return f"<Livro(cod_livro={self.cod_livro}, titulo='{self.titulo}')>"

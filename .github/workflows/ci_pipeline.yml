@@ -3,83 +3,90 @@ name: CI Pipeline
 
 # Eventos que disparam o workflow
 on:
-  push: # Dispara em qualquer push para qualquer branch
-    branches: [ main, develop ] # Opcional: Especifique branches, e.g., main ou develop
-  pull_request: # Dispara quando um Pull Request é aberto ou atualizado
+  push:
+    branches: [ main, develop ]
+  pull_request:
     branches: [ main, develop ]
 
 # Definição dos jobs
 jobs:
-  build_and_test:
-    # Sistema operacional onde o job será executado
+  # Job 1: Rodar o Linter (só precisa rodar uma vez)
+  lint:
+    name: Code Quality Linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+          pip install -r requirements.txt
+
+      - name: Run Linter (Pylint)
+        run: pylint trabalho3/
+
+  # Job 2: Rodar os testes em paralelo, um job por arquivo
+  test:
+    name: Run Tests (${{ matrix.test_file }}) # O nome do job será dinâmico
+    needs: lint # Este job só começa se o job 'lint' passar
     runs-on: ubuntu-latest
 
-    # Variáveis de ambiente para o job
+    # AQUI ESTÁ A MÁGICA: A ESTRATÉGIA DE MATRIZ
+    strategy:
+      fail-fast: false # Garante que todos os testes rodem, mesmo que um falhe
+      matrix:
+        # Defina aqui a lista de seus arquivos de teste
+        test_file:
+          - test_aluno_service.py
+          - test_livro_service.py
+          - test_exemplar_service.py
+          - test_emprestimo_service.py
+          - test_emprestimo_exemplar_service.py
+
+    # Variáveis de ambiente (usando os segredos que você já deve ter configurado)
     env:
-      # Use as credenciais do seu banco de dados de teste (podem ser diferentes das de desenvolvimento/produção)
-      # Para segurança, é melhor usar Secrets do GitHub Actions para valores sensíveis
-      # Ex: DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-      DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}" # Exemplo, ajuste conforme seu DB de TESTE
+      DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
 
-    # Passos a serem executados neste job
+    # Os passos são os mesmos de antes, mas serão executados para cada item da matriz
     steps:
-    - name: Checkout Code # Passo 1: Fazer checkout do código
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python # Passo 2: Configurar o ambiente Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11' # Use a versão do Python do seu ambiente virtual (e.g., 3.11)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies # Passo 3: Instalar as dependências do Python
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        # Instale ferramentas de linting/testes se não estiverem no requirements.txt
-        pip install pylint pytest
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest python-dotenv # Garante que pytest e dotenv estejam instalados
 
-    - name: Set up PostgreSQL # Passo 4: Configurar um serviço de PostgreSQL em Docker
-      # Este passo cria um contêiner PostgreSQL temporário para os testes
-      uses: Harmon758/postgresql-action@v1.0.0
-      with:
-        postgresql version: '16'
-        postgresql db: 'biblioteca_test'
-        postgresql user: 'postgres'
-        postgresql password: 'postarl'
-        # postgresql port: 5432 # Default, pode ser omitido
+      - name: Set up PostgreSQL
+        uses: Harmon758/postgresql-action@v1.0.0
+        with:
+          postgresql version: '16'
+          postgresql db: ${{ secrets.POSTGRES_DB }}
+          postgresql user: ${{ secrets.POSTGRES_USER }}
+          postgresql password: ${{ secrets.POSTGRES_PASSWORD }}
 
-    - name: Wait for PostgreSQL to be ready # Aguarda o DB iniciar
-      run: |
-        sudo apt-get update && sudo apt-get install -y postgresql-client
-        pg_isready -h localhost -p 5432 -U postgres -d biblioteca_test
-        # Loop para garantir que o DB está pronto antes de migrar/testar
-        for i in `seq 1 10`; do
-          pg_isready -h localhost -p 5432 -U postgres -d biblioteca_test && break
-          echo "Waiting for PostgreSQL..."
-          sleep 5
-        done
-        pg_isready -h localhost -p 5432 -U postgres -d biblioteca_test || exit 1
-
-    - name: Run Database Migrations (if applicable) # Opcional: Rodar migrações se você usa Alembic
-      # Se você usar Alembic, esta etapa aplicaria as migrações no DB de teste
-      # Lembre-se que você precisaria configurar o Alembic primeiro para usar variáveis de ambiente
-      run: |
-        # cd trabalho3 # Se seu alembic.ini estiver em trabalho3
-        # alembic upgrade head
-        echo "Skipping Alembic migrations for now, as DB is manually pre-configured."
-
-    - name: Run Linter (Pylint) # Passo 5: Rodar análise de qualidade de código
-      run: |
-        # cd trabalho3 # Se precisar mudar para a pasta raiz do seu projeto Python
-        # Ajuste o caminho para a sua pasta de código Python, e.g., trabalho3/models trabalho3/services
-        pylint trabalho3/models trabalho3/services trabalho3/db.py trabalho3/main.py
-      continue-on-error: true # Permite que o workflow continue mesmo se o linter encontrar problemas
-
-    - name: Run Tests (Pytest) # Passo 6: Rodar testes unitários e de integração
-      run: |
-        # cd trabalho3 # Se precisar mudar para a pasta raiz do seu projeto Python
-        # Você precisaria criar uma pasta 'tests/' com seus arquivos de teste
-        # Ex: pytest tests/
-        echo "Tests are not yet implemented. Please create a 'tests/' directory with pytest files."
-      # Se você não tem testes ainda, isso apenas avisará. Quando tiver, remova o 'echo'
-      # e adicione seus comandos de teste reais, como 'pytest'
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          for i in `seq 1 10`; do
+            pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} && break
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} || exit 1
+      
+      - name: Run Individual Test File
+        run: pytest tests/${{ matrix.test_file }}

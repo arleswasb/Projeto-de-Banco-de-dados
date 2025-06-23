@@ -1,38 +1,36 @@
-# trabalho3/tests/test_aluno_service.py
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from trabalho3.db import Base
-from trabalho3.models.aluno import Aluno
-from trabalho3.services.aluno_service import AlunoService
+# tests/test_aluno_service.py
 
-# Usar um banco de dados em memória para testes unitários mais rápidos
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_db.db"
+# Não precisamos mais das fixtures aqui, elas vêm do conftest.py
 
-@pytest.fixture(scope="module")
-def db_engine():
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    Base.metadata.create_all(bind=engine) # Cria as tabelas para o teste
-    yield engine
-    Base.metadata.drop_all(bind=engine) # Limpa as tabelas após o teste
+from services.aluno_service import AlunoService
 
-@pytest.fixture(scope="function")
-def db_session(db_engine):
-    connection = db_engine.connect()
-    transaction = connection.begin()
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
-    session = SessionLocal()
-    yield session
-    session.close()
-    transaction.rollback()
-    connection.close()
+# --- Testes para AlunoService ---
 
-def test_create_aluno(db_session):
-    service = AlunoService(db_session)
-    aluno = service.create_aluno(nome="Teste Aluno", matricula="99999", email="test@example.com", curso="Engenharia")
-    assert aluno.matricula == "99999"
-    assert aluno.nome == "Teste Aluno"
+def test_criar_aluno(db_session): # A fixture db_session é injetada automaticamente
+    """
+    Testa a função de criar um aluno no PostgreSQL.
+    """
+    aluno_service = AlunoService()
+    
+    aluno_criado = aluno_service.criar_aluno(
+        db=db_session,
+        nome="Aluno Teste Postgres",
+        matricula="pg12345",
+        email="pg@teste.com",
+        curso="Engenharia de BD"
+    )
+    
+    assert aluno_criado is not None
+    assert aluno_criado.nome == "Aluno Teste Postgres"
 
-    found_aluno = service.get_aluno_by_matricula("99999")
-    assert found_aluno is not None
-    assert found_aluno.email == "test@example.com"
+def test_buscar_aluno_por_id(db_session):
+    """
+    Testa a busca de um aluno pela matrícula no PostgreSQL.
+    """
+    aluno_service = AlunoService()
+    aluno_criado = aluno_service.criar_aluno(db_session, "Aluno para Busca PG", "pg789", "buscapg@email.com", "Sistemas")
+    
+    aluno_encontrado = aluno_service.buscar_aluno_por_id(db=db_session, matricula="pg789")
+
+    assert aluno_encontrado is not None
+    assert aluno_encontrado.matricula == aluno_criado.matricula

@@ -1,50 +1,77 @@
 # trabalho3/services/exemplar_service.py
-"""Módulo para configuração de conexão com o banco de dados."""
-import os
-import sys
-from sqlalchemy.orm import Session
-from ..models.exemplar import Exemplar
-from ..models.livro import Livro # Importe se precisar acessar dados do livro
+"""Módulo de serviço para operações CRUD na entidade Exemplar."""
+
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 
+from ..models.exemplar import Exemplar
+
 class ExemplarService:
-    def __init__(self, db: Session):
-        self.db = db
+    """
+    Classe de serviço para gerenciar as operações CRUD da entidade Exemplar.
+    """
 
-    def get_exemplar_by_tombo(self, tombo: int):
-        return self.db.query(Exemplar).filter(Exemplar.tombo == tombo).first()
+    def criar_exemplar(self, db: Session, tombo: int, cod_livro: int) -> Optional[Exemplar]:
+        """
+        Cria um novo exemplar no banco de dados.
+        O 'tombo' é uma PK não incremental, por isso é fornecido manualmente.
+        """
+        try:
+            # Opcional: Verificar se o livro com 'cod_livro' existe antes de criar.
+            # livro_existe = db.query(Livro).filter(Livro.cod_livro == cod_livro).first()
+            # if not livro_existe:
+            #     print(f"Erro: Livro com código {cod_livro} não encontrado.")
+            #     return None
 
-    def get_all_exemplares(self, skip: int = 0, limit: int = 100):
-        from sqlalchemy.orm import joinedload
-        return self.db.query(Exemplar).options(
-            joinedload(Exemplar.livro) # Carrega os dados do livro relacionado
+            db_exemplar = Exemplar(tombo=tombo, cod_livro=cod_livro)
+            db.add(db_exemplar)
+            db.commit()
+            db.refresh(db_exemplar)
+            return db_exemplar
+        except Exception as e:
+            print(f"Erro ao criar exemplar: {e}")
+            db.rollback()
+            return None
+
+    def listar_exemplares(self, db: Session, skip: int = 0, limit: int = 100) -> List[Exemplar]:
+        """Lista todos os exemplares, carregando os dados do livro relacionado."""
+        return db.query(Exemplar).options(
+            joinedload(Exemplar.livro)
         ).offset(skip).limit(limit).all()
 
-    def create_exemplar(self, tombo: int, cod_livro: int):
-        db_exemplar = Exemplar(tombo=tombo, cod_livro=cod_livro)
-        self.db.add(db_exemplar)
-        self.db.commit()
-        self.db.refresh(db_exemplar)
-        return db_exemplar
+    def buscar_exemplar_por_id(self, db: Session, tombo: int) -> Optional[Exemplar]:
+        """Busca um exemplar pelo seu 'tombo' (chave primária)."""
+        return db.query(Exemplar).filter(Exemplar.tombo == tombo).first()
 
-    # Adicione métodos para update e delete de exemplares
-    def delete_exemplar(self, tombo: int):
-        db_exemplar = self.get_exemplar_by_tombo(tombo)
-        if db_exemplar:
-            self.db.delete(db_exemplar)
-            self.db.commit()
-            return True
-        return False
-    
-    def update_exemplar(self, tombo_existente: int, new_cod_livro: int = None) -> Optional[Exemplar]:
-        """Atualiza as informações de um exemplar existente pelo tombo."""
-        db_exemplar = self.get_exemplar_by_tombo(tombo_existente)
-        if db_exemplar:
-            if new_cod_livro is not None:
-                # Opcional: Você pode querer verificar se o new_cod_livro realmente existe na tabela Livro
-                # antes de atribuir, para evitar erros de FK.
-                db_exemplar.cod_livro = new_cod_livro
-            self.db.commit()
-            self.db.refresh(db_exemplar)
+    def atualizar_exemplar(self, db: Session, tombo: int, cod_livro: Optional[int] = None) -> Optional[Exemplar]:
+        """Atualiza os dados de um exemplar existente."""
+        db_exemplar = self.buscar_exemplar_por_id(db, tombo)
+        if not db_exemplar:
+            return None
+        
+        try:
+            if cod_livro is not None:
+                db_exemplar.cod_livro = cod_livro
+            
+            db.commit()
+            db.refresh(db_exemplar)
             return db_exemplar
-        return None
+        except Exception as e:
+            print(f"Erro ao atualizar exemplar: {e}")
+            db.rollback()
+            return None
+
+    def remover_exemplar(self, db: Session, tombo: int) -> bool:
+        """Remove um exemplar do banco de dados."""
+        db_exemplar = self.buscar_exemplar_por_id(db, tombo)
+        if not db_exemplar:
+            return False
+            
+        try:
+            db.delete(db_exemplar)
+            db.commit()
+            return True
+        except Exception as e:
+            print(f"Erro ao remover exemplar: {e}")
+            db.rollback()
+            return False
