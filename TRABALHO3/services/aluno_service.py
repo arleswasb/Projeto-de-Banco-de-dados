@@ -47,17 +47,6 @@ class AlunoService:
             return db_aluno
         return None
 
-    # REMOVA OU AJUSTE ESTE MÉTODO:
-    # Se 'matricula' é a PK, este método é redundante e incorreto, pois Aluno.id não existe ou não é a PK.
-    # Se, por acaso, você tem uma coluna 'id' no DB que não é a PK e quer buscar por ela, renomeie o método
-    # para algo como 'get_aluno_by_coluna_id' para evitar confusão com a PK.
-    # Pelo sqlacodegen, sua PK é 'matricula', então este método não deveria existir assim.
-    # Sugestão: Remova o método get_aluno_by_id completamente e use get_aluno_by_matricula para PK.
-    #
-    # def get_aluno_by_id(self, aluno_id: int):
-    #     """Busca um aluno pelo ID."""
-    #     return self.db.query(Aluno).filter(Aluno.id == aluno_id).first()
-
     def delete_aluno(self, matricula: str) -> bool: # Mude o parâmetro de 'aluno_id: int' para 'matricula: str'
         """Deleta um aluno pelo número de matrícula (PK)."""
         db_aluno = self.get_aluno_by_matricula(matricula) # Busca pela matrícula (CORRETO)

@@ -144,10 +144,10 @@ def run_example_operations():
             try:
                 data_prevista = date.today() + timedelta(days=15)
                 novo_emprestimo = emprestimo_service.create_emprestimo(
-                    aluno=novo_aluno,     # <-- Passe o OBJETO novo_aluno
-                    exemplar=novo_exemplar, # <-- Passe o OBJETO novo_exemplar
+                    aluno=novo_aluno,    
+                    exemplar=novo_exemplar, 
                     data_devolucao_prevista=data_prevista,
-                    codEmp=test_emprestimo_codEmp # <-- PASSE O NOVO ID AQUI
+                    codEmp=test_emprestimo_codEmp
                 )
                 print(f"Empréstimo criado: {novo_emprestimo}")
 
