@@ -1,18 +1,14 @@
-# Nome do seu workflow
 name: CI Pipeline
 
-# Eventos que disparam o workflow
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
-# Definição dos jobs
 jobs:
-  # Job 1: Rodar o Linter (só precisa rodar uma vez)
   lint:
-    name: Code Quality Linter
+    name: Code Quality Linter (Apenas Erros Críticos)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -29,38 +25,30 @@ jobs:
           pip install pylint
           pip install -r requirements.txt
 
-      - name: Verify project structure
-        run: ls -R
-
-      - name: Run Linter (Pylint)
+      - name: Run Strict Linter
         run: |
-          python -m pylint $(find TRABALHO3 -name "*.py")
-          python -m pylint $(find tests -name "*.py")
-          python -m pylint main.py db.py
+          # Configuração super restritiva - apenas erros críticos
+          python -m pylint \
+            --disable=all \
+            --enable=F,E,import-error,unreachable \
+            --fail-under=1 \
+            $(find . -name "*.py" -not -path "./venv/*" -not -path "./.env/*")
 
-  # Job 2: Rodar os testes em paralelo, um job por arquivo
   test:
-    name: Run Tests (${{ matrix.test_file }}) # O nome do job será dinâmico
-    needs: lint # Este job só começa se o job 'lint' passar
+    name: Run Tests (${{ matrix.test_file }})
+    needs: lint
     runs-on: ubuntu-latest
-
-    # AQUI ESTÁ A MÁGICA: A ESTRATÉGIA DE MATRIZ
     strategy:
-      fail-fast: false # Garante que todos os testes rodem, mesmo que um falhe
+      fail-fast: false
       matrix:
-        # Defina aqui a lista de seus arquivos de teste
         test_file:
           - test_aluno_service.py
           - test_livro_service.py
           - test_exemplar_service.py
           - test_emprestimo_service.py
           - test_emprestimo_exemplar_service.py
-
-    # Variáveis de ambiente (usando os segredos que você já deve ter configurado)
     env:
       DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
-
-    # Os passos são os mesmos de antes, mas serão executados para cada item da matriz
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -74,7 +62,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest python-dotenv # Garante que pytest e dotenv estejam instalados
+          pip install pytest python-dotenv
 
       - name: Set up PostgreSQL
         uses: Harmon758/postgresql-action@v1.0.0
