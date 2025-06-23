@@ -116,6 +116,5 @@ jobs:
       - name: Run individual test file
         env:
           DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
-        run: |
-          cd ${{ steps.find_dir.outputs.PROJECT_DIR }}
-          pytest tests/${{ matrix.test_file }} --verbose
+        # O comando é executado da raiz do projeto, sem 'cd'.
+        run: pytest ${{ steps.find_dir.outputs.PROJECT_DIR }}/tests/${{ matrix.test_file }} --verbose
