@@ -60,7 +60,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          
+
     steps:
       - uses: actions/checkout@v4
       
@@ -71,23 +71,25 @@ jobs:
           
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest python-dotenv psycopg2-binary
-          
+      
+      - name: Configure Python path
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "Python path configured: $GITHUB_WORKSPACE"
+      
+      - name: Debug - Show imports
+        run: |
+          echo "Tentando importar o módulo db..."
+          python -c "import sys; print(sys.path); from db import Base; print('Import successful!')" || \
+          echo "Falha ao importar. Verifique a estrutura do projeto:"
+          ls -la $GITHUB_WORKSPACE
+      
       - name: Run tests
         env:
           DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
         run: |
-          # Encontra e executa testes em qualquer diretório
-          TEST_FILES=$(find . -name "test_*.py" -not -path "./venv/*" -not -path "./.env/*")
-          
-          if [ -z "$TEST_FILES" ]; then
-            echo "Nenhum arquivo de teste encontrado!"
-            echo "Arquivos Python encontrados:"
-            find . -name "*.py"
-            exit 1
-          else
-            echo "Arquivos de teste encontrados:"
-            echo "$TEST_FILES"
-            pytest $TEST_FILES --verbose
-          fi
+          cd trabalho3  # Muda para o diretório do projeto
+          pytest tests/ --verbose --cov=. --cov-report=xml
