@@ -34,7 +34,7 @@ jobs:
 
       - name: Run Linter (Pylint)
         run: |
-          python -m pylint $(find trabalho3 -name "*.py")
+          python -m pylint $(find TRABALHO3 -name "*.py")
           python -m pylint $(find tests -name "*.py")
           python -m pylint main.py db.py
 
