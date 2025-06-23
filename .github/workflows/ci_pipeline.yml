@@ -91,5 +91,5 @@ jobs:
         env:
           DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
         run: |
-          cd trabalho3  # Muda para o diretório do projeto
+          cd TRABALHO3  # Muda para o diretório do projeto
           pytest tests/ --verbose --cov=. --cov-report=xml
