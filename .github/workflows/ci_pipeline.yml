@@ -8,79 +8,74 @@ on:
 
 jobs:
   lint:
-    name: Code Quality Linter (Apenas Erros Críticos)
+    name: Linter (Strict)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint
+          pip install pylint pytest
           pip install -r requirements.txt
-
+          
       - name: Run Strict Linter
         run: |
-          # Configuração super restritiva - apenas erros críticos
-          python -m pylint \
+          # Find all Python files except in virtual envs
+          PY_FILES=$(find . -name "*.py" -not -path "*/venv/*" -not -path "*/.env/*")
+          if [ -z "$PY_FILES" ]; then
+            echo "No Python files found!"
+            exit 1
+          fi
+          
+          echo "Files to analyze:"
+          echo "$PY_FILES"
+          
+          # Run pylint with critical checks only
+          python -m pylint $PY_FILES \
             --disable=all \
             --enable=F,E,import-error,unreachable \
-            --fail-under=1 \
-            $(find . -name "*.py" -not -path "./venv/*" -not -path "./.env/*")
+            --fail-under=1
 
   test:
-    name: Run Tests (${{ matrix.test_file }})
+    name: Run Tests
     needs: lint
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test_file:
-          - test_aluno_service.py
-          - test_livro_service.py
-          - test_exemplar_service.py
-          - test_emprestimo_service.py
-          - test_emprestimo_exemplar_service.py
-    env:
-      DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+          
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest python-dotenv
-
-      - name: Set up PostgreSQL
-        uses: Harmon758/postgresql-action@v1.0.0
-        with:
-          postgresql version: '16'
-          postgresql db: ${{ secrets.POSTGRES_DB }}
-          postgresql user: ${{ secrets.POSTGRES_USER }}
-          postgresql password: ${{ secrets.POSTGRES_PASSWORD }}
-
-      - name: Wait for PostgreSQL to be ready
+          pip install pytest python-dotenv psycopg2-binary
+          
+      - name: Run tests
+        env:
+          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
-          for i in `seq 1 10`; do
-            pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} && break
-            echo "Waiting for PostgreSQL..."
-            sleep 5
-          done
-          pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} || exit 1
-      
-      - name: Run Individual Test File
-        run: pytest tests/${{ matrix.test_file }}
+          pytest tests/ --verbose
