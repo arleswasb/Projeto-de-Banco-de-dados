@@ -29,8 +29,14 @@ jobs:
           pip install pylint
           pip install -r requirements.txt
 
+      - name: Verify project structure
+        run: ls -R
+
       - name: Run Linter (Pylint)
-        run: python -m pylint trabalho3/ tests/ main.py db.py
+        run: |
+          python -m pylint $(find trabalho3 -name "*.py")
+          python -m pylint $(find tests -name "*.py")
+          python -m pylint main.py db.py
 
   # Job 2: Rodar os testes em paralelo, um job por arquivo
   test:
