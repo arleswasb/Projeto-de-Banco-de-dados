@@ -43,9 +43,19 @@ jobs:
             --fail-under=1
 
   test:
-    name: Run Tests
+    name: Run Tests (${{ matrix.test_file }})
     needs: lint
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_file:
+          - test_aluno_service.py
+          - test_livro_service.py
+          - test_exemplar_service.py
+          - test_emprestimo_service.py
+          - test_emprestimo_exemplar_service.py
+    
     services:
       postgres:
         image: postgres:16
@@ -64,6 +74,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Find project directory (case insensitive)
+        id: find_dir
+        run: |
+          PROJECT_DIR=$(find . -maxdepth 1 -type d -iname "trabalho3" -print -quit)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Diretório do projeto não encontrado!"
+            echo "Diretórios existentes:"
+            ls -d */
+            exit 1
+          fi
+          echo "PROJECT_DIR=${PROJECT_DIR#./}" >> $GITHUB_OUTPUT
+          echo "Usando diretório: ${PROJECT_DIR#./}"
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -77,19 +100,22 @@ jobs:
       
       - name: Configure Python path
         run: |
-          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-          echo "Python path configured: $GITHUB_WORKSPACE"
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/${{ steps.find_dir.outputs.PROJECT_DIR }}" >> $GITHUB_ENV
+          echo "Python path configured to: $PYTHONPATH"
       
-      - name: Debug - Show imports
+      - name: Wait for PostgreSQL to be ready
         run: |
-          echo "Tentando importar o módulo db..."
-          python -c "import sys; print(sys.path); from db import Base; print('Import successful!')" || \
-          echo "Falha ao importar. Verifique a estrutura do projeto:"
-          ls -la $GITHUB_WORKSPACE
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          for i in `seq 1 10`; do
+            pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} && break
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+          pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} || exit 1
       
-      - name: Run tests
+      - name: Run individual test file
         env:
           DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
         run: |
-          cd TRABALHO3  # Muda para o diretório do projeto
-          pytest tests/ --verbose --cov=. --cov-report=xml
+          cd ${{ steps.find_dir.outputs.PROJECT_DIR }}
+          pytest tests/${{ matrix.test_file }} --verbose
