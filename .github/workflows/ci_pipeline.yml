@@ -30,7 +30,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Linter (Pylint)
-        run: pylint trabalho3
+        run: PYTHONPATH=. pylint trabalho3
 
   # Job 2: Rodar os testes em paralelo, um job por arquivo
   test:
