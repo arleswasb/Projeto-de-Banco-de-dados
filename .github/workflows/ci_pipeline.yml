@@ -8,54 +8,34 @@ on:
 
 jobs:
   lint:
+    # ... (job lint inalterado) ...
     name: Linter (Strict)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint pytest
-          # Este comando agora assume que requirements.txt está na raiz
+          pip install pylint
           pip install -r requirements.txt
-
       - name: Run Strict Linter
         run: |
-          # A busca por arquivos .py a partir da raiz continua funcionando perfeitamente
           PY_FILES=$(find . -name "*.py" -not -path "*/venv/*" -not -path "*/.env/*")
           if [ -z "$PY_FILES" ]; then
             echo "No Python files found!"
             exit 1
           fi
-          
-          echo "Files to analyze:"
-          echo "$PY_FILES"
-          
-          python -m pylint $PY_FILES \
-            --disable=all \
-            --enable=F,E,import-error,unreachable \
-            --fail-under=1
+          pylint $PY_FILES --disable=all --enable=F,E,import-error,unreachable --fail-under=8
 
   test:
-    name: Run Tests (${{ matrix.test_file }})
+    name: Run Automated Tests
     needs: lint
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test_file:
-          - test_aluno_service.py
-          - test_livro_service.py
-          - test_exemplar_service.py
-          - test_emprestimo_service.py
-          - test_emprestimo_exemplar_service.py
     
     services:
       postgres:
@@ -63,23 +43,16 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB_TEST }}
         ports:
           - 5432:5432
-        # A checagem de saúde do serviço já garante que o banco estará pronto para os passos seguintes.
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      # ETAPA REMOVIDA: A busca pelo diretório "trabalho3" não é mais necessária.
-      # - name: Find project directory (case insensitive) ...
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -88,23 +61,39 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Assume que requirements.txt está na raiz
           pip install -r requirements.txt
-          pip install pytest python-dotenv psycopg2-binary
       
-      - name: Configure Python path for root project
+      - name: Configure Python path
         run: |
-          # Adiciona a raiz do projeto ao PYTHONPATH para garantir que os imports funcionem
           echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-          echo "Python path configured to root workspace."
-      
-      # ETAPA REMOVIDA: A espera manual pelo PostgreSQL é redundante.
-      # O health check definido na seção 'services' já cuida disso.
-      # - name: Wait for PostgreSQL to be ready ...
 
-      - name: Run individual test file
+      # --- CADA TESTE ABAIXO TERÁ SEU PRÓPRIO "SINAL VERDE" ---
+      - name: ✅ Test Aluno Service
+        if: always() # Garante que este passo rode mesmo que o anterior falhe
         env:
-          # A variável de ambiente para a URL do banco continua a mesma
-          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
-        # O comando agora aponta para a pasta 'tests' diretamente na raiz.
-        run: pytest tests/${{ matrix.test_file }} --verbose
+          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB_TEST }}"
+        run: pytest tests/test_aluno_service.py --verbose
+
+      - name: ✅ Test Livro Service
+        if: always()
+        env:
+          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB_TEST }}"
+        run: pytest tests/test_livro_service.py --verbose
+
+      - name: ✅ Test Exemplar Service
+        if: always()
+        env:
+          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB_TEST }}"
+        run: pytest tests/test_exemplar_service.py --verbose
+        
+      - name: ✅ Test Emprestimo Service
+        if: always()
+        env:
+          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB_TEST }}"
+        run: pytest tests/test_emprestimo_service.py --verbose
+
+      - name: ✅ Test Emprestimo-Exemplar Service
+        if: always()
+        env:
+          DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB_TEST }}"
+        run: pytest tests/test_emprestimo_exemplar_service.py --verbose

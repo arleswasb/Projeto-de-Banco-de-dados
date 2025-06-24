@@ -1,26 +1,33 @@
-# trabalho3/models/aluno.py
-"""Módulo para configuração de conexão com o banco de dados."""
-import os
-import sys
-from typing import List, Optional
-from sqlalchemy import BigInteger, String, PrimaryKeyConstraint
+# models/aluno.py
+# VERSÃO FINAL REVISADA
+
+"""Módulo que define o modelo ORM para a tabela Aluno."""
+from typing import List
+from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from db import Base # <--- MUITO IMPORTANTE: Mude para a sua Base
+from db import Base
 
 class Aluno(Base):
-    __tablename__ = 'aluno' # Nome exato da tabela no seu DB
-    __table_args__ = (
-        PrimaryKeyConstraint('matricula', name='aluno_pkey'), # Nome da PK no DB
-    )
+    """
+    Classe que mapeia a tabela 'aluno' no banco de dados.
+    """
+    __tablename__ = 'aluno'
 
+    # Colunas da tabela
+    # A definição da chave primária diretamente na coluna é mais clara.
     matricula: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    nome: Mapped[Optional[str]] = mapped_column(String(255))
-    curso: Mapped[Optional[str]] = mapped_column(String(255))
-    email: Mapped[Optional[str]] = mapped_column(String(255))
 
-    # Relacionamento: um aluno pode ter muitos empréstimos
-    # 'Emprestimo' deve ser o nome da CLASSE do seu modelo de Emprestimo
-    emprestimo: Mapped[List['Emprestimo']] = relationship('Emprestimo', back_populates='aluno')
+    # Corrigido para não aceitar valores nulos, conforme exemplo do roteiro.
+    nome: Mapped[str] = mapped_column(String(255), nullable=False)
+    curso: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    def __repr__(self):
+    # Corrigido para não ser nulo e ser único.
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+    # Relacionamento: um aluno pode ter muitos empréstimos.
+    # Esta definição já estava correta.
+    # O 'back_populates' conecta este relacionamento ao atributo 'aluno' na classe Emprestimo.
+    emprestimos: Mapped[List["Emprestimo"]] = relationship(back_populates='aluno')
+
+    def __repr__(self) -> str:
         return f"<Aluno(matricula={self.matricula}, nome='{self.nome}', email='{self.email}')>"

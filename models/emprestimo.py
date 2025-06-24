@@ -1,41 +1,51 @@
-# TRABALHO3/models/emprestimo.py
+# models/emprestimo.py
+# VERSÃO FINAL REVISADA
+
 """Modelo ORM para a tabela Emprestimo."""
 
-# Importações do SQLAlchemy e de tipos Python
-from sqlalchemy import Column, BigInteger, Date, PrimaryKeyConstraint, ForeignKeyConstraint
+from sqlalchemy import BigInteger, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
+from datetime import date  # Importando 'date' diretamente para clareza
 from typing import List, Optional
 
 from db import Base
 
+# Importando as classes para os type hints dos relacionamentos
+if TYPE_CHECKING:
+    from .aluno import Aluno
+    from .emprestimo_exemplar import EmprestimoExemplar
+
 class Emprestimo(Base):
     __tablename__ = 'emprestimo'
-    __table_args__ = (
-        ForeignKeyConstraint(['mat_aluno'], ['aluno.matricula'], name='mat_aluno'),
-        PrimaryKeyConstraint('codEmp', name='emprestimo_pkey')
-    )
 
     codEmp: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    data_emp: Mapped[datetime.date] = mapped_column(Date)
-    data_dev: Mapped[Optional[datetime.date]] = mapped_column(Date)
-    data_prev: Mapped[Optional[datetime.date]] = mapped_column(Date)
-    atraso: Mapped[Optional[int]] = mapped_column(BigInteger)
-    mat_aluno: Mapped[Optional[int]] = mapped_column(BigInteger)
+    
+    # Chave estrangeira para Aluno. Definida diretamente na coluna.
+    # Um empréstimo DEVE pertencer a um aluno, portanto nullable=False.
+    mat_aluno: Mapped[int] = mapped_column(BigInteger, ForeignKey('aluno.matricula'), nullable=False)
 
-    # --- RELACIONAMENTOS COM NOMENCLATURA MELHORADA ---
+    # Um empréstimo DEVE ter uma data, portanto nullable=False.
+    data_emp: Mapped[date] = mapped_column(Date, nullable=False)
+    
+    # Data de devolução pode ser nula até a devolução ocorrer.
+    data_dev: Mapped[Optional[date]] = mapped_column(Date)
+    
+    # Data prevista geralmente é obrigatória.
+    data_prev: Mapped[date] = mapped_column(Date, nullable=False)
+
+    atraso: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+
+    # --- RELACIONAMENTOS CORRIGIDOS ---
 
     # Relacionamento Muitos-para-Um com Aluno.
-    # Um empréstimo pertence a um aluno.
-    aluno: Mapped[Optional['Aluno']] = relationship('Aluno', back_populates='emprestimos')
+    # O nome 'emprestimos' deve corresponder ao back_populates na classe Aluno.
+    aluno: Mapped["Aluno"] = relationship(back_populates='emprestimos')
 
-    # Relacionamento Muitos-para-Muitos com Exemplar.
-    # Um empréstimo pode ter vários exemplares.
-    # O nome do atributo 'exemplares' (plural) reflete que é uma lista.
-    exemplares: Mapped[List['Exemplar']] = relationship(
-        'Exemplar', 
-        secondary='Emp_exemplar',  # Mantido conforme seu BD existente
-        back_populates='emprestimos'
+    # Relacionamento Um-para-Muitos com a CLASSE de associação EmprestimoExemplar.
+    exemplares_associados: Mapped[List["EmprestimoExemplar"]] = relationship(
+        back_populates="emprestimo",
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self):

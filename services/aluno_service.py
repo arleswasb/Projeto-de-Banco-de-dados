@@ -1,8 +1,10 @@
-# TRABALHO3/services/aluno_service.py
+# services/aluno_service.py
+# VERSÃO FINAL REVISADA
+
 """Módulo de serviço para operações CRUD na entidade Aluno."""
 
 from sqlalchemy.orm import Session
-from models.aluno import Aluno
+from models import Aluno  # <-- CORREÇÃO: Importando do pacote 'models'
 from typing import Optional, List
 
 class AlunoService:
@@ -10,9 +12,13 @@ class AlunoService:
     Classe de serviço para gerenciar as operações CRUD da entidade Aluno.
     """
 
-    def criar_aluno(self, db: Session, nome: str, matricula: str, email: str, curso: str) -> Optional[Aluno]:
+    # O __init__ não é estritamente necessário neste padrão, pois a sessão é passada
+    # em cada método, tornando o serviço 'stateless' (sem estado).
+
+    def criar_aluno(self, db: Session, nome: str, matricula: int, email: str, curso: str) -> Optional[Aluno]:
         """Cria um novo aluno no banco de dados."""
         try:
+            # CORREÇÃO: matricula agora é um int, alinhado com o modelo.
             db_aluno = Aluno(nome=nome, matricula=matricula, email=email, curso=curso)
             db.add(db_aluno)
             db.commit()
@@ -27,12 +33,14 @@ class AlunoService:
         """Lista todos os alunos com paginação."""
         return db.query(Aluno).offset(skip).limit(limit).all()
 
-    def buscar_aluno_por_id(self, db: Session, matricula: str) -> Optional[Aluno]:
+    def buscar_aluno_por_id(self, db: Session, matricula: int) -> Optional[Aluno]:
         """Busca um aluno pela sua matrícula (chave primária)."""
+        # CORREÇÃO: matricula agora é um int.
         return db.query(Aluno).filter(Aluno.matricula == matricula).first()
 
-    def atualizar_aluno(self, db: Session, matricula: str, nome: Optional[str] = None, email: Optional[str] = None, curso: Optional[str] = None) -> Optional[Aluno]:
+    def atualizar_aluno(self, db: Session, matricula: int, nome: Optional[str] = None, email: Optional[str] = None, curso: Optional[str] = None) -> Optional[Aluno]:
         """Atualiza os dados de um aluno existente."""
+        # CORREÇÃO: matricula agora é um int.
         db_aluno = self.buscar_aluno_por_id(db, matricula)
         if not db_aluno:
             return None
@@ -53,8 +61,9 @@ class AlunoService:
             db.rollback()
             return None
 
-    def remover_aluno(self, db: Session, matricula: str) -> bool:
+    def remover_aluno(self, db: Session, matricula: int) -> bool:
         """Remove um aluno do banco de dados."""
+        # CORREÇÃO: matricula agora é um int.
         db_aluno = self.buscar_aluno_por_id(db, matricula)
         if not db_aluno:
             return False

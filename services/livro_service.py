@@ -1,40 +1,49 @@
-# trabalho3/services/livro_service.py
-"""Módulo de serviço para operações CRUD na entidade Livro."""
+# services/livro_service.py
+# VERSÃO FINAL REVISADA
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import Optional, List
 
-from models.livro import Livro
+# CORREÇÃO: Importando do pacote 'models'
+from models import Livro
 
 class LivroService:
     """
     Classe de serviço para gerenciar as operações CRUD da entidade Livro.
     """
+    # ADIÇÃO: Construtor para um design consistente.
+    def __init__(self, db_session: Session):
+        self.db_session = db_session
 
-    def criar_livro(self, db: Session, titulo: str, autor: str, editora: Optional[str] = None, ano: Optional[int] = None) -> Optional[Livro]:
+    def criar_livro(self, titulo: str, autor: str, editora: Optional[str] = None, ano: Optional[int] = None) -> Optional[Livro]:
         """Cria um novo livro no banco de dados."""
         try:
             db_livro = Livro(titulo=titulo, autor=autor, editora=editora, ano=ano)
-            db.add(db_livro)
-            db.commit()
-            db.refresh(db_livro)
+            self.db_session.add(db_livro)
+            self.db_session.commit()
+            self.db_session.refresh(db_livro)
             return db_livro
         except Exception as e:
             print(f"Erro ao criar livro: {e}")
-            db.rollback()
+            self.db_session.rollback()
             return None
 
-    def listar_livros(self, db: Session, skip: int = 0, limit: int = 100) -> List[Livro]:
-        """Lista todos os livros com paginação."""
-        return db.query(Livro).offset(skip).limit(limit).all()
+    def listar_livros(self, skip: int = 0, limit: int = 100) -> List[Livro]:
+        """Lista todos os livros, carregando os exemplares de forma otimizada."""
+        # MELHORIA: Usando selectinload para evitar o problema N+1.
+        # Ele carrega todos os exemplares de todos os livros listados em uma segunda query,
+        # o que é muito mais eficiente do que uma query por livro.
+        return self.db_session.query(Livro).options(
+            selectinload(Livro.exemplares)
+        ).offset(skip).limit(limit).all()
 
-    def buscar_livro_por_id(self, db: Session, cod_livro: int) -> Optional[Livro]:
+    def buscar_livro_por_id(self, cod_livro: int) -> Optional[Livro]:
         """Busca um livro pelo seu código (chave primária)."""
-        return db.query(Livro).filter(Livro.cod_livro == cod_livro).first()
+        return self.db_session.query(Livro).filter(Livro.cod_livro == cod_livro).first()
 
-    def atualizar_livro(self, db: Session, cod_livro: int, titulo: Optional[str] = None, autor: Optional[str] = None, editora: Optional[str] = None, ano: Optional[int] = None) -> Optional[Livro]:
+    def atualizar_livro(self, cod_livro: int, titulo: Optional[str] = None, autor: Optional[str] = None, editora: Optional[str] = None, ano: Optional[int] = None) -> Optional[Livro]:
         """Atualiza os dados de um livro existente."""
-        db_livro = self.buscar_livro_por_id(db, cod_livro)
+        db_livro = self.buscar_livro_por_id(cod_livro)
         if not db_livro:
             return None
         
@@ -48,29 +57,25 @@ class LivroService:
             if ano is not None:
                 db_livro.ano = ano
             
-            db.commit()
-            db.refresh(db_livro)
+            self.db_session.commit()
+            self.db_session.refresh(db_livro)
             return db_livro
         except Exception as e:
             print(f"Erro ao atualizar livro: {e}")
-            db.rollback()
+            self.db_session.rollback()
             return None
 
-    def remover_livro(self, db: Session, cod_livro: int) -> bool:
-        """
-        Remove um livro do banco de dados.
-        Nota: Isso pode falhar se existirem exemplares associados a este livro,
-        a menos que a remoção em cascata (ON DELETE CASCADE) esteja configurada no banco.
-        """
-        db_livro = self.buscar_livro_por_id(db, cod_livro)
+    def remover_livro(self, cod_livro: int) -> bool:
+        """Remove um livro do banco de dados."""
+        db_livro = self.buscar_livro_por_id(cod_livro)
         if not db_livro:
             return False
             
         try:
-            db.delete(db_livro)
-            db.commit()
+            self.db_session.delete(db_livro)
+            self.db_session.commit()
             return True
         except Exception as e:
             print(f"Erro ao remover livro: {e}")
-            db.rollback()
+            self.db_session.rollback()
             return False

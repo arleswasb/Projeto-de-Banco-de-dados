@@ -1,34 +1,41 @@
-# trabalho3/models/exemplar.py
+# models/exemplar.py
+# VERSÃO FINAL REVISADA
+
 """Modelo ORM para a tabela Exemplar."""
 
-from typing import List, Optional
-from sqlalchemy import BigInteger, ForeignKeyConstraint, PrimaryKeyConstraint
+from typing import List
+from sqlalchemy import BigInteger, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db import Base
 
+# Importando as classes para os type hints dos relacionamentos
+if TYPE_CHECKING:
+    from .livro import Livro
+    from .emprestimo_exemplar import EmprestimoExemplar
+
 class Exemplar(Base):
     __tablename__ = 'exemplar'
-    __table_args__ = (
-        ForeignKeyConstraint(['cod_livro'], ['livro.cod_livro'], name='exemplar_cod_livro_fkey'),
-        PrimaryKeyConstraint('tombo', name='exemplar_pkey')
-    )
 
     tombo: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    cod_livro: Mapped[Optional[int]] = mapped_column(BigInteger)
 
-    # --- RELACIONAMENTOS COM NOMENCLATURA MELHORADA ---
+    # Um exemplar DEVE pertencer a um livro, portanto nullable=False.
+    # A ForeignKey é definida diretamente na coluna.
+    cod_livro: Mapped[int] = mapped_column(BigInteger, ForeignKey('livro.cod_livro'), nullable=False)
+
+
+    # --- RELACIONAMENTOS CORRIGIDOS ---
 
     # Relacionamento Muitos-para-Um com Livro.
-    # Um exemplar pertence a um livro.
-    livro: Mapped[Optional['Livro']] = relationship('Livro', back_populates='exemplares')
+    # O nome 'exemplares' deve corresponder ao back_populates na classe Livro.
+    # Removido o 'Optional' pois um exemplar sempre terá um livro associado.
+    livro: Mapped["Livro"] = relationship(back_populates='exemplares')
 
-    # Relacionamento Muitos-para-Muitos com Emprestimo.
-    # Um exemplar pode estar em vários empréstimos ao longo do tempo.
-    emprestimos: Mapped[List['Emprestimo']] = relationship(
-        'Emprestimo',
-        secondary='Emp_exemplar', # Mantido conforme seu BD existente
-        back_populates='exemplares'
+    # Relacionamento Um-para-Muitos com a CLASSE de associação EmprestimoExemplar.
+    # Esta é a correção CRÍTICA.
+    emprestimos_associados: Mapped[List["EmprestimoExemplar"]] = relationship(
+        back_populates="exemplar",
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self):
