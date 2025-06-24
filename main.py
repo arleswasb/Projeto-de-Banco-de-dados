@@ -1,4 +1,4 @@
-# TRABALHO3/main.py
+# main.py
 
 from datetime import date, timedelta
 

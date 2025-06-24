@@ -3,7 +3,7 @@
 
 from sqlalchemy import BigInteger, PrimaryKeyConstraint, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-from ..db import Base
+from db import Base
 
 class EmprestimoExemplar(Base):
     """

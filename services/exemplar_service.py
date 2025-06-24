@@ -4,7 +4,7 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 
-from ..models.exemplar import Exemplar
+from models.exemplar import Exemplar
 
 class ExemplarService:
     """

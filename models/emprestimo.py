@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import List, Optional
 
-from ..db import Base
+from db import Base
 
 class Emprestimo(Base):
     __tablename__ = 'emprestimo'

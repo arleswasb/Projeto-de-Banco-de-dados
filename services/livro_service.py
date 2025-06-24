@@ -4,7 +4,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from ..models.livro import Livro
+from models.livro import Livro
 
 class LivroService:
     """

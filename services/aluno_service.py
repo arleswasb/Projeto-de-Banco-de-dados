@@ -2,7 +2,7 @@
 """Módulo de serviço para operações CRUD na entidade Aluno."""
 
 from sqlalchemy.orm import Session
-from ..models.aluno import Aluno
+from models.aluno import Aluno
 from typing import Optional, List
 
 class AlunoService:

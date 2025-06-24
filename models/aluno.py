@@ -5,7 +5,7 @@ import sys
 from typing import List, Optional
 from sqlalchemy import BigInteger, String, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from ..db import Base # <--- MUITO IMPORTANTE: Mude para a sua Base
+from db import Base # <--- MUITO IMPORTANTE: Mude para a sua Base
 
 class Aluno(Base):
     __tablename__ = 'aluno' # Nome exato da tabela no seu DB

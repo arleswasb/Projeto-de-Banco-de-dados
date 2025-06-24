@@ -5,7 +5,7 @@ from typing import List, Optional
 from sqlalchemy import BigInteger, ForeignKeyConstraint, PrimaryKeyConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..db import Base
+from db import Base
 
 class Exemplar(Base):
     __tablename__ = 'exemplar'

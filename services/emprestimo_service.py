@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session, joinedload
 from datetime import date
 from typing import Optional, List
 
-from ..models.emprestimo import Emprestimo
-from ..models.exemplar import Exemplar # Necessário para o join na busca
+from models.emprestimo import Emprestimo
+from models.exemplar import Exemplar # Necessário para o join na busca
 
 class EmprestimoService:
     """
