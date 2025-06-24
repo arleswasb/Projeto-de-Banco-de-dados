@@ -11,22 +11,24 @@ jobs:
     name: Linter (Strict)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pylint pytest
+          # Este comando agora assume que requirements.txt está na raiz
           pip install -r requirements.txt
-          
+
       - name: Run Strict Linter
         run: |
-          # Find all Python files except in virtual envs
+          # A busca por arquivos .py a partir da raiz continua funcionando perfeitamente
           PY_FILES=$(find . -name "*.py" -not -path "*/venv/*" -not -path "*/.env/*")
           if [ -z "$PY_FILES" ]; then
             echo "No Python files found!"
@@ -36,7 +38,6 @@ jobs:
           echo "Files to analyze:"
           echo "$PY_FILES"
           
-          # Run pylint with critical checks only
           python -m pylint $PY_FILES \
             --disable=all \
             --enable=F,E,import-error,unreachable \
@@ -65,6 +66,7 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         ports:
           - 5432:5432
+        # A checagem de saúde do serviço já garante que o banco estará pronto para os passos seguintes.
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -72,21 +74,12 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-      - name: Find project directory (case insensitive)
-        id: find_dir
-        run: |
-          PROJECT_DIR=$(find . -maxdepth 1 -type d -iname "trabalho3" -print -quit)
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "Diretório do projeto não encontrado!"
-            echo "Diretórios existentes:"
-            ls -d */
-            exit 1
-          fi
-          echo "PROJECT_DIR=${PROJECT_DIR#./}" >> $GITHUB_OUTPUT
-          echo "Usando diretório: ${PROJECT_DIR#./}"
-      
+      # ETAPA REMOVIDA: A busca pelo diretório "trabalho3" não é mais necessária.
+      # - name: Find project directory (case insensitive) ...
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -95,26 +88,23 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # Assume que requirements.txt está na raiz
           pip install -r requirements.txt
           pip install pytest python-dotenv psycopg2-binary
       
-      - name: Configure Python path
+      - name: Configure Python path for root project
         run: |
-          echo "PYTHONPATH=$GITHUB_WORKSPACE/${{ steps.find_dir.outputs.PROJECT_DIR }}" >> $GITHUB_ENV
-          echo "Python path configured to: $PYTHONPATH"
+          # Adiciona a raiz do projeto ao PYTHONPATH para garantir que os imports funcionem
+          echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+          echo "Python path configured to root workspace."
       
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
-          for i in `seq 1 10`; do
-            pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} && break
-            echo "Waiting for PostgreSQL..."
-            sleep 5
-          done
-          pg_isready -h localhost -p 5432 -U ${{ secrets.POSTGRES_USER }} || exit 1
-      
+      # ETAPA REMOVIDA: A espera manual pelo PostgreSQL é redundante.
+      # O health check definido na seção 'services' já cuida disso.
+      # - name: Wait for PostgreSQL to be ready ...
+
       - name: Run individual test file
         env:
+          # A variável de ambiente para a URL do banco continua a mesma
           DATABASE_URL: "postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ secrets.POSTGRES_DB }}"
-        # O comando é executado da raiz do projeto, sem 'cd'.
-        run: pytest ${{ steps.find_dir.outputs.PROJECT_DIR }}/tests/${{ matrix.test_file }} --verbose
+        # O comando agora aponta para a pasta 'tests' diretamente na raiz.
+        run: pytest tests/${{ matrix.test_file }} --verbose
