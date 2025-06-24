@@ -1,6 +1,7 @@
-# TRABALHO3/models/__init__.py
+# models/__init__.py
+
 from .aluno import Aluno
 from .livro import Livro
 from .exemplar import Exemplar
 from .emprestimo import Emprestimo
-from .emprestimo_exemplar import t_Emp_exemplar 
+from .emprestimo_exemplar import t_Emp_exemplar
