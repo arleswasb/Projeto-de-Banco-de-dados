@@ -1,5 +1,5 @@
 # main.py
-# VERSÃO DE DEMONSTRAÇÃO COMPLETA E SISTEMÁTICA
+# VERSÃO FINAL COM LISTAGEM DE EXEMPLARES POR LIVRO
 
 from datetime import date, timedelta
 from sqlalchemy import text
@@ -36,68 +36,98 @@ def run_full_demonstration():
         print("Serviços instanciados.")
 
         # =================================================================
-        # DEMONSTRAÇÃO DO CICLO DE VIDA COMPLETO: ALUNO
+        # DEMONSTRAÇÃO DO CICLO DE VIDA: ALUNO
         # =================================================================
-        print("\n\n--- DEMONSTRAÇÃO DO CICLO DE VIDA: ALUNO ---")
-        
-        # 1. CREATE
+        print("\n\n--- CICLO DE VIDA: ALUNO ---")
         print("\n[ALUNO - CREATE] Criando um novo aluno...")
         aluno = aluno_service.criar_aluno(nome="Ana Pereira", matricula=101, email="ana.p@email.com", curso="Letras")
-        print(f"-> Aluno criado: {aluno}")
+        print(f"-> CRIADO: {aluno}")
         
-        # 2. READ (By ID)
         print(f"\n[ALUNO - READ] Buscando aluno pela matrícula {aluno.matricula}...")
         aluno_encontrado = aluno_service.buscar_aluno_por_id(aluno.matricula)
-        print(f"-> Aluno encontrado: {aluno_encontrado}")
-        assert aluno_encontrado.nome == "Ana Pereira"
-
-        # 3. UPDATE
-        print(f"\n[ALUNO - UPDATE] Atualizando o curso do aluno {aluno.nome}...")
-        aluno_atualizado = aluno_service.atualizar_aluno(matricula=aluno.matricula, curso="Letras - Inglês")
-        print(f"-> Curso atualizado para: '{aluno_atualizado.curso}'")
-        assert aluno_atualizado.curso == "Letras - Inglês"
-
-        # 4. READ (List All)
-        print("\n[ALUNO - READ] Listando todos os alunos no banco...")
-        todos_alunos = aluno_service.listar_alunos()
-        print(f"-> Total de alunos encontrados: {len(todos_alunos)}")
-        print(todos_alunos)
-        assert len(todos_alunos) == 1
+        print(f"-> ENCONTRADO: {aluno_encontrado}")
         
-        # 5. DELETE
-        print(f"\n[ALUNO - DELETE] Removendo o aluno {aluno.nome}...")
-        sucesso_remocao = aluno_service.remover_aluno(aluno.matricula)
-        print(f"-> Remoção bem-sucedida: {sucesso_remocao}")
+        print(f"\n[ALUNO - UPDATE] Atualizando o curso do aluno...")
+        aluno_atualizado = aluno_service.atualizar_aluno(matricula=aluno.matricula, curso="Letras - Inglês")
+        print(f"-> ATUALIZADO: Curso agora é '{aluno_atualizado.curso}'")
+        
+        print(f"\n[ALUNO - DELETE] Removendo o aluno...")
+        aluno_service.remover_aluno(aluno.matricula)
         aluno_apos_remocao = aluno_service.buscar_aluno_por_id(aluno.matricula)
-        print(f"-> Tentando buscar o aluno novamente: {aluno_apos_remocao}")
+        print(f"-> REMOVIDO: Tentando buscar novamente -> {aluno_apos_remocao}")
         assert aluno_apos_remocao is None
+
+        # =================================================================
+        # DEMONSTRAÇÃO DO CICLO DE VIDA: LIVRO
+        # =================================================================
+        print("\n\n--- CICLO DE VIDA: LIVRO ---")
+        
+        print("\n[LIVRO - CREATE] Criando um novo livro...")
+        livro = livro_service.criar_livro(titulo="O Guia do Mochileiro das Galáxias", autor="Douglas Adams")
+        print(f"-> CRIADO: {livro}")
+        
+        print(f"\n[LIVRO - READ] Buscando livro pelo código {livro.cod_livro}...")
+        livro_encontrado = livro_service.buscar_livro_por_id(livro.cod_livro)
+        print(f"-> ENCONTRADO: {livro_encontrado}")
+
+        print(f"\n[LIVRO - UPDATE] Atualizando o ano do livro...")
+        livro_atualizado = livro_service.atualizar_livro(cod_livro=livro.cod_livro, ano=1979)
+        print(f"-> ATUALIZADO: Ano agora é '{livro_atualizado.ano}'")
+
+        print("\n[LIVRO - READ] Listando todos os livros...")
+        todos_livros = livro_service.listar_livros()
+        print(f"-> LIVROS ATUAIS: {todos_livros}")
 
         # =================================================================
         # DEMONSTRAÇÃO DO FLUXO DE TRABALHO: EMPRÉSTIMO
         # =================================================================
-        print("\n\n--- DEMONSTRAÇÃO DO FLUXO DE TRABALHO: EMPRÉSTIMO ---")
+        print("\n\n--- FLUXO DE TRABALHO: EMPRÉSTIMO COM EXEMPLARES ---")
 
-        # 1. CREATE (Entidades pré-requisito)
-        print("\n[EMPRÉSTIMO - ARRANGE] Criando livro, exemplar e aluno para o fluxo...")
-        livro = livro_service.criar_livro(titulo="O Guia do Mochileiro das Galáxias", autor="Douglas Adams")
-        aluno = aluno_service.criar_aluno(nome="Beto Silva", matricula=102, email="beto.s@email.com", curso="Física")
-        exemplar = exemplar_service.criar_exemplar(tombo=3001, cod_livro=livro.cod_livro)
-        print(f"-> Entidades criadas: Livro '{livro.titulo}', Aluno '{aluno.nome}', Exemplar Tombo {exemplar.tombo}")
+        # 1. ARRANGE: Criar entidades para o fluxo
+        print("\n[FLUXO - ARRANGE] Criando um novo aluno e exemplares para o livro existente...")
+        aluno_para_emprestimo = aluno_service.criar_aluno(nome="Beto Silva", matricula=102, email="beto.s@email.com", curso="Física")
+        exemplar1 = exemplar_service.criar_exemplar(tombo=3001, cod_livro=livro.cod_livro)
+        exemplar2 = exemplar_service.criar_exemplar(tombo=3002, cod_livro=livro.cod_livro)
+        print(f"-> Aluno '{aluno_para_emprestimo.nome}' e exemplares {exemplar1.tombo}, {exemplar2.tombo} criados.")
 
-        # 2. CREATE (Empréstimo) e Associação
-        print("\n[EMPRÉSTIMO - ACT] Criando empréstimo e associando exemplar...")
+        # --- NOVA DEMONSTRAÇÃO: LISTAR EXEMPLARES DE UM LIVRO ---
+        print(f"\n[LIVRO/EXEMPLAR - READ] Listando todos os exemplares do livro '{livro.titulo}'...")
+        # Buscamos o livro novamente para garantir que o SQLAlchemy carregue a lista de exemplares
+        livro_com_exemplares = livro_service.buscar_livro_por_id(livro.cod_livro)
+        # Acessamos o relacionamento .exemplares que foi configurado no models/livro.py
+        lista_de_exemplares = livro_com_exemplares.exemplares
+        print(f"-> O livro ID {livro.cod_livro} possui {len(lista_de_exemplares)} exemplar(es):")
+        for ex in lista_de_exemplares:
+            print(f"   - Tombo: {ex.tombo}")
+        assert len(lista_de_exemplares) == 2
+        # --- FIM DA NOVA DEMONSTRAÇÃO ---
+
+        # 2. ACT: Criar o empréstimo e associar os exemplares
+        print("\n[FLUXO - ACT] Criando empréstimo e associando exemplares...")
         data_prevista = date.today() + timedelta(days=10)
-        emprestimo = emprestimo_service.criar_emprestimo(mat_aluno=aluno.matricula, data_prevista=data_prevista)
-        ee_service.adicionar_exemplar_a_emprestimo(emprestimo.codEmp, exemplar.tombo)
-        print(f"-> Empréstimo ID {emprestimo.codEmp} criado e exemplar {exemplar.tombo} associado.")
+        emprestimo = emprestimo_service.criar_emprestimo(mat_aluno=aluno_para_emprestimo.matricula, data_prevista=data_prevista)
+        ee_service.adicionar_exemplar_a_emprestimo(emprestimo.codEmp, exemplar1.tombo)
+        ee_service.adicionar_exemplar_a_emprestimo(emprestimo.codEmp, exemplar2.tombo)
+        print(f"-> Empréstimo ID {emprestimo.codEmp} criado e exemplares associados.")
 
-        # 3. READ (Verificação)
-        print("\n[EMPRÉSTIMO - ASSERT] Verificando exemplares no empréstimo...")
+        # 3. ASSERT: Verificar o resultado
+        print("\n[FLUXO - ASSERT] Verificando exemplares no empréstimo...")
         exemplares_no_emprestimo = ee_service.listar_exemplares_de_emprestimo(emprestimo.codEmp)
-        print(f"-> O empréstimo {emprestimo.codEmp} possui {len(exemplares_no_emprestimo)} exemplar(es).")
-        assert len(exemplares_no_emprestimo) == 1
-        assert exemplares_no_emprestimo[0].tombo == exemplar.tombo
-
+        print(f"-> O empréstimo {emprestimo.codEmp} possui {len(exemplares_no_emprestimo)} exemplares.")
+        assert len(exemplares_no_emprestimo) == 2
+        
+        # 4. CLEANUP: Remover as entidades em ordem
+        print("\n[FLUXO - DELETE] Removendo entidades do fluxo...")
+        emprestimo_service.remover_emprestimo(emprestimo.codEmp)
+        print("-> Empréstimo e associações removidos.")
+        exemplar_service.remover_exemplar(exemplar1.tombo)
+        exemplar_service.remover_exemplar(exemplar2.tombo)
+        print("-> Exemplares removidos.")
+        aluno_service.remover_aluno(aluno_para_emprestimo.matricula)
+        print("-> Aluno do fluxo removido.")
+        livro_service.remover_livro(livro.cod_livro)
+        print("-> Livro removido.")
+        
     except Exception as e:
         print(f"\nOcorreu um erro inesperado durante as operações: {e}")
         db_session.rollback()
