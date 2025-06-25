@@ -2,7 +2,7 @@
 # VERSÃO FINAL REVISADA
 
 """Módulo que define o modelo ORM para a tabela Aluno."""
-from typing import List
+from typing import List, TYPE_CHECKING
 from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db import Base

@@ -4,7 +4,7 @@
 """Módulo de serviço para operações CRUD na entidade Aluno."""
 
 from sqlalchemy.orm import Session
-from models import Aluno  # <-- CORREÇÃO: Importando do pacote 'models'
+from models import Aluno  
 from typing import Optional, List
 
 class AlunoService:
@@ -12,13 +12,14 @@ class AlunoService:
     Classe de serviço para gerenciar as operações CRUD da entidade Aluno.
     """
 
-    # O __init__ não é estritamente necessário neste padrão, pois a sessão é passada
-    # em cada método, tornando o serviço 'stateless' (sem estado).
+    # Ele armazena a sessão (db) dentro do objeto de serviço.
+    def __init__(self, db_session: Session):
+        self.db_session = db_session
 
     def criar_aluno(self, db: Session, nome: str, matricula: int, email: str, curso: str) -> Optional[Aluno]:
         """Cria um novo aluno no banco de dados."""
         try:
-            # CORREÇÃO: matricula agora é um int, alinhado com o modelo.
+
             db_aluno = Aluno(nome=nome, matricula=matricula, email=email, curso=curso)
             db.add(db_aluno)
             db.commit()

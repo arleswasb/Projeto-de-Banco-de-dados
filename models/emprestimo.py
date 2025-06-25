@@ -6,7 +6,7 @@
 from sqlalchemy import BigInteger, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import date  # Importando 'date' diretamente para clareza
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from db import Base
 

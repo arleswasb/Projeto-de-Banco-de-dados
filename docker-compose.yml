@@ -1,17 +1,26 @@
 # docker-compose.yml
-version: '3.8'
+# VERSÃO FINAL REVISADA
+
+
 services:
-  db:
+  # O nome do serviço pode ser 'db' ou 'postgres', ambos são comuns.
+  # Usarei 'postgres' para manter a consistência com o exemplo anterior.
+  postgres:
     image: postgres:16
+    container_name: biblioteca_postgres_local
     restart: always
-    environment:
-      POSTGRES_DB: PostgreSQL 17
-      POSTGRES_USER: arleswasb  
-      POSTGRES_PASSWORD: postarl
+    
+    # CORREÇÃO: Carrega as variáveis diretamente do seu arquivo .env
+    # O Docker Compose irá procurar por POSTGRES_USER, POSTGRES_PASSWORD e POSTGRES_DB neste arquivo.
+    env_file:
+      - .env
+      
     ports:
       - "5432:5432"
+      
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
+# Declaração do volume para garantir a persistência dos dados
 volumes:
-  pg_data:
+  postgres_data:

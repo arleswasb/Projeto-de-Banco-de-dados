@@ -3,7 +3,7 @@
 
 """Modelo ORM para a tabela Livro."""
 
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

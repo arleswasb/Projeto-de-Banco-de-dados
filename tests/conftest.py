@@ -14,10 +14,16 @@ load_dotenv()
 # Configuração da conexão com o banco de dados de teste
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://postgres:postarl@localhost:5432/biblioteca_db_teste"
+    "postgresql://postgres:postarl@localhost:5432/biblioteca?client_encoding=utf8"
 )
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    connect_args={
+        'options': '-c client_encoding=utf8'
+    }
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # REMOVIDA a fixture 'setup_and_teardown_database' para cumprir o requisito
