@@ -2,9 +2,9 @@
 __pycache__/
 *.pyc
 *.sqlite3 # Se você usasse SQLite, mas é bom ter
-.env       # CRUCIAL: Contém suas credenciais do banco de dados!
-venv/      # Sua pasta de ambiente virtual
-.venv/     # Outro nome comum para pasta de ambiente virtual
+#.env       # CRUCIAL: Contém suas credenciais do banco de dados!
+#venv/      # Sua pasta de ambiente virtual
+#.venv/     # Outro nome comum para pasta de ambiente virtual
 
 # Logs
 *.log
