@@ -18,24 +18,22 @@ TECNOLOGIAS UTILIZADAS
 * CI/CD: GitHub Actions
 
 
-ESTRUTURA DO PROJETO
---------------------
+## 📂 Estrutura do Projeto
 
 O projeto segue uma arquitetura de camadas para separar as responsabilidades, conforme especificado nos requisitos da disciplina:
-
+````
 .
-├── .github/workflows/      # Contém o pipeline de CI/CD
-├── models/                 # Mapeamentos ORM (SQLAlchemy) das tabelas
-├── services/               # Classes com a lógica de negócio (operações CRUD)
-├── tests/                  # Testes automatizados com Pytest
-├── .env                    # Arquivo de configuração de ambiente (NÃO deve ir para o Git)
-├── .gitignore              # Arquivos e pastas ignorados pelo Git
-├── db.py                   # Configuração da conexão com o banco de dados
-├── docker-compose.yml      # Arquivo para orquestrar o container do banco de dados local
-├── main.py                 # Script principal para demonstração manual das operações
-└── requirements.txt        # Lista de dependências Python do projeto
-
-
+|-- .github/workflows/      # Contém o pipeline de CI/CD
+|-- models/                 # Mapeamentos ORM (SQLAlchemy) das tabelas
+|-- services/               # Classes com a lógica de negócio (operações CRUD)
+|-- tests/                  # Testes automatizados com Pytest
+|-- .env                    # Arquivo de configuração de ambiente (NÃO deve ir para o Git)
+|-- .gitignore              # Arquivos e pastas ignorados pelo Git
+|-- db.py                   # Configuração da conexão com o banco de dados
+|-- docker-compose.yml      # Arquivo para orquestrar o container do banco de dados local
+|-- main.py                 # Script principal para demonstração manual das operações
+L-- requirements.txt        # Lista de dependências Python do projeto
+````
 PRÉ-REQUISITOS
 --------------
 
