@@ -1,65 +1,50 @@
 # tests/conftest.py
-# VERSÃO FINAL REVISADA
+# VERSÃO FINAL CORRIGIDA E CONSISTENTE
 
 import pytest
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-from db import Base, engine # Base ainda é necessária para o engine conhecer os modelos
+from db import Base # Apenas a Base é necessária do db.py
 
-# Carrega as variáveis de ambiente do arquivo .env (se ele existir)
+# Carrega as variáveis de ambiente
 load_dotenv()
 
-# Configuração da conexão com o banco de dados
+# Configuração da conexão com o banco de dados de teste
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://postgres:postarl@localhost:5432/biblioteca?client_encoding=utf8"
+    "postgresql://postgres:postarl@localhost:5432/biblioteca_db_teste"
 )
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    connect_args={
-        'options': '-c client_encoding=utf8'
-    }
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# ---- DEFINIÇÃO CORRETA DO ENGINE DE TESTE ----
+# Criamos um engine específico para os testes.
+engine_de_teste = create_engine(DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine_de_teste)
 
-# --- ADIÇÃO DA FIXTURE QUE CRIA AS TABELAS ---
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     """
-    Cria todas as tabelas no banco de dados de teste antes dos testes rodarem.
+    Cria todas as tabelas no banco de dados de teste ANTES de qualquer teste rodar.
     """
-    # Usando a Base importada, cria todas as tabelas (aluno, livro, etc.)
-    Base.metadata.create_all(bind=test_engine)
-    
-    # 'yield' passa o controle para os testes rodarem
+    # CORREÇÃO: Usando a variável 'engine_de_teste' que foi definida acima.
+    Base.metadata.create_all(bind=engine_de_teste)
     yield
-    
-    #Apaga as tabelas no final da sessão de testes
-    Base.metadata.drop_all(bind=test_engine)
+    # Opcional: Base.metadata.drop_all(bind=engine_de_teste)
 
 @pytest.fixture(scope="function")
 def db_session():
     """
     Fornece uma sessão de banco de dados isolada para CADA teste.
-    A mágica está no transaction.rollback() ao final.
     """
-    connection = engine.connect()
-    
-    # Inicia uma transação
+    # CORREÇÃO: Usando o 'engine_de_teste' para a conexão.
+    connection = engine_de_teste.connect()
     transaction = connection.begin()
-    
-    # Cria a sessão vinculada a essa transação
     session = TestingSessionLocal(bind=connection)
-
-    # 'yield' entrega a sessão para o teste que a solicitou
+    
     yield session
-
-    # Ao final do teste, fecha a sessão e desfaz a transação.
-    # Isso garante que os dados de um teste não "sujem" o próximo.
+    
     session.close()
     transaction.rollback()
     connection.close()

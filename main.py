@@ -1,13 +1,9 @@
 # main.py
-# VERSÃO FINAL E COMPLETA
+# VERSÃO DE DEMONSTRAÇÃO COMPLETA E SISTEMÁTICA
 
-"""
-Script principal para demonstração e teste manual das funcionalidades do sistema de biblioteca.
-"""
 from datetime import date, timedelta
-from db import SessionLocal
 from sqlalchemy import text
-# Importa todas as classes de serviço do pacote 'services'
+from db import SessionLocal
 from services import (
     AlunoService,
     LivroService,
@@ -16,104 +12,98 @@ from services import (
     EmprestimoExemplarService
 )
 
-def run_demonstration():
+def run_full_demonstration():
     """
-    Executa um fluxo de trabalho completo para demonstrar as operações do sistema.
+    Executa uma demonstração sistemática de todas as operações CRUD e fluxos de trabalho.
     """
-    print("--- INICIANDO DEMONSTRAÇÃO DO SISTEMA DE BIBLIOTECA ---")
+    print("--- INICIANDO DEMONSTRAÇÃO COMPLETA DO SISTEMA ---")
     
-    # Cria uma sessão única para toda a demonstração
     db_session = SessionLocal()
     
     try:
-        # --- PASSO 0: Limpar os dados existentes ---
-        print("\n[PASSO 0] Limpando tabelas para uma nova demonstração...")
-        # Executa o comando TRUNCATE para limpar os dados e reiniciar as sequências
+        # --- PASSO 0: Limpeza do Banco de Dados ---
+        print("\n[SETUP] Limpando tabelas para uma nova demonstração...")
         db_session.execute(text('TRUNCATE TABLE aluno, livro, exemplar, emprestimo, "Emp_exemplar" RESTART IDENTITY CASCADE;'))
         db_session.commit()
         print("Tabelas limpas com sucesso.")
-        
-        # --- 1. Instanciando os serviços com a sessão ---
-        print("\n[PASSO 1] Instanciando todos os serviços...")
+
+        # --- Instanciando os serviços ---
         aluno_service = AlunoService(db_session)
         livro_service = LivroService(db_session)
         exemplar_service = ExemplarService(db_session)
         emprestimo_service = EmprestimoService(db_session)
         ee_service = EmprestimoExemplarService(db_session)
-        print("Serviços instanciados com sucesso.")
+        print("Serviços instanciados.")
 
-        # --- 2. Criando entidades base ---
-        print("\n[PASSO 2] Criando um novo livro e um novo aluno...")
+        # =================================================================
+        # DEMONSTRAÇÃO DO CICLO DE VIDA COMPLETO: ALUNO
+        # =================================================================
+        print("\n\n--- DEMONSTRAÇÃO DO CICLO DE VIDA: ALUNO ---")
         
-        livro = livro_service.criar_livro(
-            titulo="Arquitetura Limpa: O Guia do Artesão para Estrutura e Design de Software",
-            autor="Robert C. Martin"
-        )
-        if not livro:
-            print("-> Falha ao criar livro. Abortando.")
-            return
-        print(f"-> Livro criado: {livro.titulo} (ID: {livro.cod_livro})")
-
-        aluno = aluno_service.criar_aluno(
-            nome="Joana D'arc",
-            matricula=202502,
-            email="joana.dark@email.com",
-            curso="Ciência da Computação"
-        )
-        if not aluno:
-            print("-> Falha ao criar aluno. Abortando.")
-            return
-        print(f"-> Aluno criado: {aluno.nome} (Matrícula: {aluno.matricula})")
-
-        # --- 3. Criando exemplares para o livro ---
-        print(f"\n[PASSO 3] Criando dois exemplares para o livro '{livro.titulo}'...")
-        exemplar1 = exemplar_service.criar_exemplar(tombo=2001, cod_livro=livro.cod_livro)
-        exemplar2 = exemplar_service.criar_exemplar(tombo=2002, cod_livro=livro.cod_livro)
-        if not (exemplar1 and exemplar2):
-            print("-> Falha ao criar exemplares. Abortando.")
-            return
-        print(f"-> Exemplares criados: Tombo {exemplar1.tombo} e {exemplar2.tombo}")
-
-        # --- 4. Criando um empréstimo ---
-        print(f"\n[PASSO 4] Criando um empréstimo para o aluno '{aluno.nome}'...")
-        data_prevista = date.today() + timedelta(days=15)
-        emprestimo = emprestimo_service.criar_emprestimo(
-            mat_aluno=aluno.matricula,
-            data_prevista=data_prevista
-        )
-        if not emprestimo:
-            print("-> Falha ao criar empréstimo. Abortando.")
-            return
-        print(f"-> Empréstimo criado: ID {emprestimo.codEmp}, com devolução prevista para {emprestimo.data_prev}")
-
-        # --- 5. Associando os exemplares ao empréstimo ---
-        print(f"\n[PASSO 5] Associando os exemplares ao empréstimo ID {emprestimo.codEmp}...")
-        ee_service.adicionar_exemplar_a_emprestimo(emprestimo.codEmp, exemplar1.tombo)
-        ee_service.adicionar_exemplar_a_emprestimo(emprestimo.codEmp, exemplar2.tombo)
+        # 1. CREATE
+        print("\n[ALUNO - CREATE] Criando um novo aluno...")
+        aluno = aluno_service.criar_aluno(nome="Ana Pereira", matricula=101, email="ana.p@email.com", curso="Letras")
+        print(f"-> Aluno criado: {aluno}")
         
-        # Verificando a associação através do serviço
+        # 2. READ (By ID)
+        print(f"\n[ALUNO - READ] Buscando aluno pela matrícula {aluno.matricula}...")
+        aluno_encontrado = aluno_service.buscar_aluno_por_id(aluno.matricula)
+        print(f"-> Aluno encontrado: {aluno_encontrado}")
+        assert aluno_encontrado.nome == "Ana Pereira"
+
+        # 3. UPDATE
+        print(f"\n[ALUNO - UPDATE] Atualizando o curso do aluno {aluno.nome}...")
+        aluno_atualizado = aluno_service.atualizar_aluno(matricula=aluno.matricula, curso="Letras - Inglês")
+        print(f"-> Curso atualizado para: '{aluno_atualizado.curso}'")
+        assert aluno_atualizado.curso == "Letras - Inglês"
+
+        # 4. READ (List All)
+        print("\n[ALUNO - READ] Listando todos os alunos no banco...")
+        todos_alunos = aluno_service.listar_alunos()
+        print(f"-> Total de alunos encontrados: {len(todos_alunos)}")
+        print(todos_alunos)
+        assert len(todos_alunos) == 1
+        
+        # 5. DELETE
+        print(f"\n[ALUNO - DELETE] Removendo o aluno {aluno.nome}...")
+        sucesso_remocao = aluno_service.remover_aluno(aluno.matricula)
+        print(f"-> Remoção bem-sucedida: {sucesso_remocao}")
+        aluno_apos_remocao = aluno_service.buscar_aluno_por_id(aluno.matricula)
+        print(f"-> Tentando buscar o aluno novamente: {aluno_apos_remocao}")
+        assert aluno_apos_remocao is None
+
+        # =================================================================
+        # DEMONSTRAÇÃO DO FLUXO DE TRABALHO: EMPRÉSTIMO
+        # =================================================================
+        print("\n\n--- DEMONSTRAÇÃO DO FLUXO DE TRABALHO: EMPRÉSTIMO ---")
+
+        # 1. CREATE (Entidades pré-requisito)
+        print("\n[EMPRÉSTIMO - ARRANGE] Criando livro, exemplar e aluno para o fluxo...")
+        livro = livro_service.criar_livro(titulo="O Guia do Mochileiro das Galáxias", autor="Douglas Adams")
+        aluno = aluno_service.criar_aluno(nome="Beto Silva", matricula=102, email="beto.s@email.com", curso="Física")
+        exemplar = exemplar_service.criar_exemplar(tombo=3001, cod_livro=livro.cod_livro)
+        print(f"-> Entidades criadas: Livro '{livro.titulo}', Aluno '{aluno.nome}', Exemplar Tombo {exemplar.tombo}")
+
+        # 2. CREATE (Empréstimo) e Associação
+        print("\n[EMPRÉSTIMO - ACT] Criando empréstimo e associando exemplar...")
+        data_prevista = date.today() + timedelta(days=10)
+        emprestimo = emprestimo_service.criar_emprestimo(mat_aluno=aluno.matricula, data_prevista=data_prevista)
+        ee_service.adicionar_exemplar_a_emprestimo(emprestimo.codEmp, exemplar.tombo)
+        print(f"-> Empréstimo ID {emprestimo.codEmp} criado e exemplar {exemplar.tombo} associado.")
+
+        # 3. READ (Verificação)
+        print("\n[EMPRÉSTIMO - ASSERT] Verificando exemplares no empréstimo...")
         exemplares_no_emprestimo = ee_service.listar_exemplares_de_emprestimo(emprestimo.codEmp)
-        print(f"-> O empréstimo {emprestimo.codEmp} agora possui {len(exemplares_no_emprestimo)} exemplares.")
-        for ex in exemplares_no_emprestimo:
-            print(f"   - Exemplar Tombo: {ex.tombo}, Título: '{ex.livro.titulo}'")
-        
-        # --- 6. Removendo uma associação ---
-        print(f"\n[PASSO 6] Removendo o exemplar {exemplar1.tombo} do empréstimo...")
-        sucesso = ee_service.remover_exemplar_de_emprestimo(emprestimo.codEmp, exemplar1.tombo)
-        if sucesso:
-            print("-> Associação removida com sucesso.")
-        
-        exemplares_restantes = ee_service.listar_exemplares_de_emprestimo(emprestimo.codEmp)
-        print(f"-> O empréstimo {emprestimo.codEmp} agora possui {len(exemplares_restantes)} exemplar(es).")
+        print(f"-> O empréstimo {emprestimo.codEmp} possui {len(exemplares_no_emprestimo)} exemplar(es).")
+        assert len(exemplares_no_emprestimo) == 1
+        assert exemplares_no_emprestimo[0].tombo == exemplar.tombo
 
     except Exception as e:
         print(f"\nOcorreu um erro inesperado durante as operações: {e}")
-        # Em caso de erro, garante o rollback para não deixar o banco em estado inconsistente
         db_session.rollback()
     finally:
-        # Garante que a sessão seja fechada ao final, independentemente de erros
         print("\n--- DEMONSTRAÇÃO FINALIZADA. Fechando sessão. ---")
         db_session.close()
 
 if __name__ == "__main__":
-    run_demonstration()
+    run_full_demonstration()
