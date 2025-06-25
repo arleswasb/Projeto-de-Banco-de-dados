@@ -6,12 +6,12 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-from db import Base # Base ainda é necessária para o engine conhecer os modelos
+from db import Base, engine # Base ainda é necessária para o engine conhecer os modelos
 
 # Carrega as variáveis de ambiente do arquivo .env (se ele existir)
 load_dotenv()
 
-# Configuração da conexão com o banco de dados de teste
+# Configuração da conexão com o banco de dados
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
     "postgresql://postgres:postarl@localhost:5432/biblioteca?client_encoding=utf8"
@@ -26,8 +26,20 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# REMOVIDA a fixture 'setup_and_teardown_database' para cumprir o requisito
-# de não usar Base.metadata.create_all().
+# --- ADIÇÃO DA FIXTURE QUE CRIA AS TABELAS ---
+@pytest.fixture(scope="session", autouse=True)
+def setup_database():
+    """
+    Cria todas as tabelas no banco de dados de teste antes dos testes rodarem.
+    """
+    # Usando a Base importada, cria todas as tabelas (aluno, livro, etc.)
+    Base.metadata.create_all(bind=test_engine)
+    
+    # 'yield' passa o controle para os testes rodarem
+    yield
+    
+    #Apaga as tabelas no final da sessão de testes
+    Base.metadata.drop_all(bind=test_engine)
 
 @pytest.fixture(scope="function")
 def db_session():
