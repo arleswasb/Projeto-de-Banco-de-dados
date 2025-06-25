@@ -5,10 +5,8 @@
 Script principal para demonstração e teste manual das funcionalidades do sistema de biblioteca.
 """
 from datetime import date, timedelta
-
-# Importa a fábrica de sessões do db.py
 from db import SessionLocal
-
+from sqlalchemy import text
 # Importa todas as classes de serviço do pacote 'services'
 from services import (
     AlunoService,
@@ -28,6 +26,13 @@ def run_demonstration():
     db_session = SessionLocal()
     
     try:
+        # --- PASSO 0: Limpar os dados existentes ---
+        print("\n[PASSO 0] Limpando tabelas para uma nova demonstração...")
+        # Executa o comando TRUNCATE para limpar os dados e reiniciar as sequências
+        db_session.execute(text('TRUNCATE TABLE aluno, livro, exemplar, emprestimo, "Emp_exemplar" RESTART IDENTITY CASCADE;'))
+        db_session.commit()
+        print("Tabelas limpas com sucesso.")
+        
         # --- 1. Instanciando os serviços com a sessão ---
         print("\n[PASSO 1] Instanciando todos os serviços...")
         aluno_service = AlunoService(db_session)

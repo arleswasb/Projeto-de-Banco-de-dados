@@ -1,17 +1,17 @@
 # services/livro_service.py
-# VERSÃO FINAL REVISADA
+# VERSÃƒO FINAL REVISADA
 
 from sqlalchemy.orm import Session, selectinload
 from typing import Optional, List
 
-# CORREÇÃO: Importando do pacote 'models'
+# CORREÃ‡ÃƒO: Importando do pacote 'models'
 from models import Livro
 
 class LivroService:
     """
-    Classe de serviço para gerenciar as operações CRUD da entidade Livro.
+    Classe de serviÃ§o para gerenciar as operaÃ§Ãµes CRUD da entidade Livro.
     """
-    # ADIÇÃO: Construtor para um design consistente.
+    # ADIÃ‡ÃƒO: Construtor para um design consistente.
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
@@ -32,13 +32,13 @@ class LivroService:
         """Lista todos os livros, carregando os exemplares de forma otimizada."""
         # MELHORIA: Usando selectinload para evitar o problema N+1.
         # Ele carrega todos os exemplares de todos os livros listados em uma segunda query,
-        # o que é muito mais eficiente do que uma query por livro.
+        # o que Ã© muito mais eficiente do que uma query por livro.
         return self.db_session.query(Livro).options(
             selectinload(Livro.exemplares)
         ).offset(skip).limit(limit).all()
 
     def buscar_livro_por_id(self, cod_livro: int) -> Optional[Livro]:
-        """Busca um livro pelo seu código (chave primária)."""
+        """Busca um livro pelo seu cÃ³digo (chave primÃ¡ria)."""
         return self.db_session.query(Livro).filter(Livro.cod_livro == cod_livro).first()
 
     def atualizar_livro(self, cod_livro: int, titulo: Optional[str] = None, autor: Optional[str] = None, editora: Optional[str] = None, ano: Optional[int] = None) -> Optional[Livro]:
